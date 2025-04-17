@@ -57,19 +57,30 @@ export default function UploadForm() {
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         const fileType = file.type.startsWith("audio/") ? "audio" : "video";
-
+      
+        // 1. Save to Firestore
         await addDoc(collection(db, "transcriptions"), {
           filename: file.name,
           url: downloadURL,
           type: fileType,
           createdAt: Timestamp.now(),
         });
-
-        setSuccess("File uploaded successfully!");
+      
+        // 2. 🔁 Send to /api/transcribe for background processing
+        await fetch("/api/transcribe", {
+          method: "POST",
+          body: new URLSearchParams({
+            url: downloadURL,
+            filename: file.name,
+          }),
+        });
+      
+        setSuccess("File uploaded and transcription started!");
         setUploading(false);
         setFile(null);
         setProgress(0);
       }
+      
     );
   };
 
