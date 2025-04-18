@@ -1,8 +1,8 @@
+// 🔄 UPDATED UploadForm.js
 "use client";
 import { useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { storage, db } from "../lib/firebase";
+import { storage } from "../lib/firebase"; // ❌ no db or addDoc import anymore
 
 export default function UploadForm() {
   const [file, setFile] = useState(null);
@@ -12,7 +12,7 @@ export default function UploadForm() {
   const [success, setSuccess] = useState("");
 
   const allowedTypes = ["audio/mpeg", "audio/wav", "video/mp4", "video/webm"];
-  const maxSize = 50 * 1024 * 1024; // 50MB
+  const maxSize = 50 * 1024 * 1024;
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
@@ -57,30 +57,22 @@ export default function UploadForm() {
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         const fileType = file.type.startsWith("audio/") ? "audio" : "video";
-      
-        // 1. Save to Firestore
-        await addDoc(collection(db, "transcriptions"), {
-          filename: file.name,
-          url: downloadURL,
-          type: fileType,
-          createdAt: Timestamp.now(),
-        });
-      
-        // 2. 🔁 Send to /api/transcribe for background processing
+
+        // ✅ Send to backend to handle doc creation and queuing
         await fetch("/api/transcribe", {
           method: "POST",
           body: new URLSearchParams({
             url: downloadURL,
             filename: file.name,
+            type: fileType,
           }),
         });
-      
+
         setSuccess("File uploaded and transcription started!");
         setUploading(false);
         setFile(null);
         setProgress(0);
       }
-      
     );
   };
 

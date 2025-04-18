@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import UploadForm from '../components/UploadForm';
-import TranscriptionList from '../components/TranscriptionList';
+import { downloadAsTxt, downloadAsPDF } from '../lib/download';
 
 export default function Dashboard() {
   const [files, setFiles] = useState([]);
@@ -71,13 +71,41 @@ export default function Dashboard() {
 
             {/* Transcription Text */}
             {selectedFile.result ? (
-              <div className="space-y-2 bg-zinc-100 text-black p-4 rounded">
-                {selectedFile.result.split('. ').map((chunk, idx) => (
-                  <p key={idx} className="bg-white p-2 rounded shadow">
-                    {chunk.trim()}
-                  </p>
-                ))}
-              </div>
+              <>
+                <div className="space-y-2 bg-zinc-100 text-black p-4 rounded">
+                  {selectedFile.result.split('. ').map((chunk, idx) => (
+                    <p key={idx} className="bg-white p-2 rounded shadow">
+                      {chunk.trim()}
+                    </p>
+                  ))}
+                </div>
+
+                {/* Download Buttons */}
+                <div className="mt-4 flex gap-4">
+                  <button
+                    onClick={() =>
+                      downloadAsTxt({
+                        filename: selectedFile.filename,
+                        text: selectedFile.result,
+                      })
+                    }
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  >
+                    Download as TXT
+                  </button>
+                  <button
+                    onClick={() =>
+                      downloadAsPDF({
+                        filename: selectedFile.filename,
+                        text: selectedFile.result,
+                      })
+                    }
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  >
+                    Download as PDF
+                  </button>
+                </div>
+              </>
             ) : (
               <div className="text-yellow-600 font-medium">Not transcribed</div>
             )}
