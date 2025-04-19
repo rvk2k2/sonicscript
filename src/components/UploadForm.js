@@ -1,15 +1,16 @@
-// 🔄 UPDATED UploadForm.js
 "use client";
 import { useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { storage } from "../lib/firebase"; // ❌ no db or addDoc import anymore
+import { storage } from "../lib/firebase";
+import { Upload } from "lucide-react";
 
-export default function UploadForm() {
+export default function UploadForm({ onUploadStart, onUploadComplete }) {
   const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [dragActive, setDragActive] = useState(false);
 
   const allowedTypes = ["audio/mpeg", "audio/wav", "video/mp4", "video/webm"];
   const maxSize = 50 * 1024 * 1024;
@@ -18,6 +19,10 @@ export default function UploadForm() {
     const selected = e.target.files[0];
     if (!selected) return;
 
+    validateAndSetFile(selected);
+  };
+
+  const validateAndSetFile = (selected) => {
     if (!allowedTypes.includes(selected.type)) {
       setError("Only audio (MP3, WAV) and video (MP4, WEBM) files are allowed.");
       setFile(null);
@@ -32,17 +37,41 @@ export default function UploadForm() {
 
     setError("");
     setFile(selected);
+    handleUpload(selected);
   };
 
-  const handleUpload = async () => {
-    if (!file) {
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      validateAndSetFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleUpload = async (selectedFile) => {
+    if (!selectedFile) {
       setError("Please select a file first.");
       return;
     }
 
     setUploading(true);
-    const storageRef = ref(storage, `uploads/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    if (onUploadStart) onUploadStart();
+    
+    const storageRef = ref(storage, `uploads/${selectedFile.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, selectedFile);
 
     uploadTask.on(
       "state_changed",
@@ -56,14 +85,14 @@ export default function UploadForm() {
       },
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        const fileType = file.type.startsWith("audio/") ? "audio" : "video";
+        const fileType = selectedFile.type.startsWith("audio/") ? "audio" : "video";
 
-        // ✅ Send to backend to handle doc creation and queuing
+        // Send to backend to handle doc creation and queuing
         await fetch("/api/transcribe", {
           method: "POST",
           body: new URLSearchParams({
             url: downloadURL,
-            filename: file.name,
+            filename: selectedFile.name,
             type: fileType,
           }),
         });
@@ -72,34 +101,46 @@ export default function UploadForm() {
         setUploading(false);
         setFile(null);
         setProgress(0);
+        
+        if (onUploadComplete) onUploadComplete();
       }
     );
   };
 
   return (
-    <div className="max-w-md mx-auto">
-      <input
-        type="file"
-        onChange={handleFileChange}
-        className="mb-4"
-        accept="audio/*,video/*"
-      />
-      {error && <p className="text-red-500 mb-2">{error}</p>}
+    <div className="w-full">
+      <div 
+        className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer
+          ${dragActive ? 'border-gray-800 bg-gray-50' : 'border-gray-300'}`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <input
+          type="file"
+          onChange={handleFileChange}
+          className="hidden"
+          id="file-upload"
+          accept="audio/*,video/*"
+        />
+        <label htmlFor="file-upload" className="w-full cursor-pointer">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500">Drag and drop or select a file to upload</span>
+            <Upload className="h-6 w-6 text-gray-500" />
+          </div>
+        </label>
+      </div>
+
+      {error && <p className="text-red-500 mt-2">{error}</p>}
       {progress > 0 && (
-        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+        <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
           <div
-            className="bg-blue-600 h-2.5 rounded-full"
+            className="bg-gray-800 h-2 rounded-full"
             style={{ width: `${progress}%` }}
           />
         </div>
       )}
-      <button
-        onClick={handleUpload}
-        className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
-        disabled={uploading}
-      >
-        {uploading ? "Uploading..." : "Upload"}
-      </button>
       {success && <p className="text-green-600 mt-2">{success}</p>}
     </div>
   );
