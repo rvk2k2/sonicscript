@@ -14,7 +14,8 @@ export default function Dashboard() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-
+  const [loadingMessage, setLoadingMessage] = useState(null);
+  
   useEffect(() => {
     const q = query(collection(db, 'transcriptions'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
