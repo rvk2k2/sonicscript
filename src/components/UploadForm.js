@@ -11,6 +11,7 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [dragActive, setDragActive] = useState(false);
+  
 
   const allowedTypes = ["audio/mpeg", "audio/wav", "video/mp4", "video/webm"];
   const maxSize = 50 * 1024 * 1024;
