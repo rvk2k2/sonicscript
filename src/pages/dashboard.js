@@ -5,6 +5,7 @@ import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import UploadForm from '../components/UploadForm';
 import { downloadAsTxt, downloadAsPDF } from '../lib/download';
+import Navbar from '@/components/Navbar';
 
 export default function Dashboard() {
   const [files, setFiles] = useState([]);
@@ -24,6 +25,8 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen">
+      <Navbar />
+      <div>
       {/* Sidebar */}
       <div className="w-1/4 bg-zinc-900 text-white p-4 overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">History</h2>
@@ -111,6 +114,7 @@ export default function Dashboard() {
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
