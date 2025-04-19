@@ -2,52 +2,89 @@
 import { downloadAsTxt, downloadAsPDF } from "../lib/download";
 
 export default function TranscriptDisplay({ transcription }) {
-  const isVideo = transcription.type === "video";
+  const isVideo = transcription?.filename?.endsWith('.mp4') || transcription?.filename?.endsWith('.mov');
+
+  if (!transcription) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-8">
+        <h1 className="text-6xl font-bold mb-16">SonicScript</h1>
+        <p className="text-gray-500 mb-8">Supports MP3, M4A file</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="mt-6">
-      <h2 className="text-xl font-bold mb-2">{transcription.filename}</h2>
-
-      <div className="rounded overflow-hidden mb-4">
-        {isVideo ? (
-          <video controls className="w-full rounded-md">
-            <source src={transcription.url} type="video/mp4" />
-          </video>
-        ) : (
-          <audio controls className="w-full">
-            <source src={transcription.url} type="audio/mpeg" />
-          </audio>
-        )}
-      </div>
-
-      <div className="bg-gray-100 p-4 rounded-md space-y-2">
-        {transcription.text ? (
-          transcription.text.split(". ").map((line, i) => (
-            <div key={i} className="bg-white p-3 rounded shadow-sm w-fit">
-              {line.trim()}
+    <div className="flex-1 flex flex-col">
+      {/* File Content */}
+      <div className="flex-1 p-8">
+        <h1 className="text-2xl font-bold mb-8">{transcription.filename}</h1>
+        
+        {/* Transcription Result */}
+        <div className="mb-8">
+          {transcription.result ? (
+            <div className="space-y-4">
+              {transcription.result.split('. ').map((chunk, idx) => (
+                <p key={idx} className="p-2">
+                  {chunk.trim()}
+                </p>
+              ))}
             </div>
-          ))
-        ) : (
-          <p className="text-sm text-gray-600">⏳ Transcribing...</p>
-        )}
-      </div>
+          ) : (
+            <div className="text-yellow-600 font-medium">Not transcribed</div>
+          )}
+        </div>
 
-      {transcription.text && (
-        <div className="mt-4 flex gap-4">
+        {/* Download Buttons */}
+        <div className="flex justify-center gap-6 mb-8">
           <button
-            onClick={() => downloadAsTxt(transcription)}
-            className="text-sm text-blue-600 underline"
-          >
-            Download as TXT
-          </button>
-          <button
-            onClick={() => downloadAsPDF(transcription)}
-            className="text-sm text-green-600 underline"
+            onClick={() => downloadAsPDF({
+              filename: transcription.filename,
+              text: transcription.result,
+            })}
+            className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
           >
             Download as PDF
           </button>
+          <button
+            onClick={() => downloadAsTxt({
+              filename: transcription.filename,
+              text: transcription.result,
+            })}
+            className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
+          >
+            Download as Txt
+          </button>
         </div>
-      )}
+      </div>
+
+      {/* Media Player */}
+      <div className="border-t border-gray-200 p-4">
+        <div className="flex items-center">
+          <div className="flex items-center space-x-4">
+            <div className="bg-black p-2">
+              <div className="text-white text-lg">{transcription.filename}</div>
+            </div>
+            
+            {transcription.downloadURL && (
+              <div className="flex-1">
+                {isVideo ? (
+                  <video
+                    controls
+                    src={transcription.downloadURL}
+                    className="w-full max-w-2xl rounded"
+                  />
+                ) : (
+                  <audio
+                    controls
+                    src={transcription.downloadURL}
+                    className="w-full"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
