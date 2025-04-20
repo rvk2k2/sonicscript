@@ -11,7 +11,6 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [dragActive, setDragActive] = useState(false);
-  
 
   const allowedTypes = ["audio/mpeg", "audio/wav", "video/mp4", "video/webm"];
   const maxSize = 50 * 1024 * 1024;
@@ -19,7 +18,6 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     if (!selected) return;
-
     validateAndSetFile(selected);
   };
 
@@ -44,7 +42,6 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
     if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
     } else if (e.type === "dragleave") {
@@ -56,7 +53,6 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       validateAndSetFile(e.dataTransfer.files[0]);
     }
@@ -70,7 +66,7 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
 
     setUploading(true);
     if (onUploadStart) onUploadStart();
-    
+
     const storageRef = ref(storage, `uploads/${selectedFile.name}`);
     const uploadTask = uploadBytesResumable(storageRef, selectedFile);
 
@@ -88,22 +84,34 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         const fileType = selectedFile.type.startsWith("audio/") ? "audio" : "video";
 
-        // Send to backend to handle doc creation and queuing
-        await fetch("/api/transcribe", {
-          method: "POST",
-          body: new URLSearchParams({
-            url: downloadURL,
-            filename: selectedFile.name,
-            type: fileType,
-          }),
-        });
+        try {
+          const res = await fetch("/api/transcribe", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              url: downloadURL,
+              filename: selectedFile.name,
+              type: fileType,
+            }),
+          });
 
-        setSuccess("File uploaded and transcription started!");
+          const data = await res.json();
+
+          if (res.ok && data.docId) {
+            setSuccess("File uploaded and transcription started!");
+            if (onUploadComplete) onUploadComplete(data.docId);
+          } else {
+            setError("Transcription failed to start.");
+          }
+        } catch (err) {
+          setError("Error sending data to server: " + err.message);
+        }
+
         setUploading(false);
         setFile(null);
         setProgress(0);
-        
-        if (onUploadComplete) onUploadComplete();
       }
     );
   };
