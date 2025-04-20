@@ -14,23 +14,32 @@ export default function Dashboard() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState(null);
-  
+  const [newlyUploadedId, setNewlyUploadedId] = useState(null);
+
   useEffect(() => {
     const q = query(collection(db, 'transcriptions'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setFiles(data);
-  
-      // Don't auto-select any file
-      // Only update selectedFile if it's deleted
+
+      // Auto-select the new transcription when result is ready
+      if (newlyUploadedId) {
+        const uploadedFile = data.find(file => file.id === newlyUploadedId);
+        if (uploadedFile?.result && !selectedFile) {
+          setSelectedFile(uploadedFile);
+          setIsTranscribing(false);
+          setNewlyUploadedId(null);
+        }
+      }
+
+      // Deselect if current file was deleted
       if (selectedFile && !data.find(file => file.id === selectedFile.id)) {
         setSelectedFile(null);
       }
     });
+
     return () => unsubscribe();
-  }, [selectedFile]);
-  
+  }, [selectedFile, newlyUploadedId]);
 
   const handleDeleteFile = async (fileId) => {
     try {
@@ -46,26 +55,22 @@ export default function Dashboard() {
   const refreshDashboard = () => {
     setSelectedFile(null);
   };
-  
 
   const handleFileUploadStart = () => {
     setIsUploading(true);
   };
 
-  const handleFileUploadComplete = () => {
+  const handleFileUploadComplete = (docId) => {
     setIsUploading(false);
     setIsTranscribing(true);
-    setTimeout(() => {
-      setIsTranscribing(false);
-    }, 3000);
+    setNewlyUploadedId(docId);
   };
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-100px)] bg-white">
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
+        {/* Sidebar */}
         <div className="w-64 bg-black text-white flex flex-col">
-          {/* Icons */}
           <div className="flex justify-between p-4 border-b border-gray-700">
             <Link href="/">
               <Home className="h-6 w-6 text-white cursor-pointer" />
@@ -76,7 +81,6 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* History */}
           <div className="p-4">
             <h2 className="text-2xl font-bold mb-6">History</h2>
             <TranscriptionList 
@@ -95,7 +99,7 @@ export default function Dashboard() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8">
               <h1 className="text-6xl font-bold mb-16">SonicScript</h1>
-              <p className="text-gray-500 mb-8">Supports MP3, M4A file</p>
+              <p className="text-gray-500 mb-8">Supports MP3, M4A, MP4, WEBM</p>
 
               {isUploading ? (
                 <div className="text-center">
