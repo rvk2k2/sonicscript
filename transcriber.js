@@ -37,7 +37,6 @@ const worker = new Worker(
     const transcription = response.data.text;
 
     const docRef = doc(db, "transcriptions", docId);
-
     await updateDoc(docRef, {
       result: transcription,
       completedAt: Timestamp.now(),

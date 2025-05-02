@@ -74,6 +74,7 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
       "state_changed",
       (snapshot) => {
         const prog = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        console.log(`Upload is ${progress}% done`);
         setProgress(prog);
       },
       (err) => {

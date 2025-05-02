@@ -15,7 +15,7 @@ export async function POST(request) {
     // 1. Create a new Firestore document
     const docRef = await addDoc(collection(db, "transcriptions"), {
       filename,
-      url,
+      url,  
       type,
       createdAt: Timestamp.now(),
     });
