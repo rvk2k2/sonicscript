@@ -1,21 +1,9 @@
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import axios from 'axios';
-import { initializeApp } from 'firebase/app';
-import {
-  getFirestore,
-  doc,
-  updateDoc,
-  Timestamp,
-} from 'firebase/firestore';
-import firebaseConfig from './src/lib/firebase.js'; // Adjust path if needed
-import dotenv from 'dotenv';
-
-dotenv.config({ path: './.env' });
-
-// Firebase Init
-initializeApp(firebaseConfig);
-const db = getFirestore();
+import './loadEnv.js';
+import { adminDb } from "./src/lib/firebase-admin.js";
+import admin from 'firebase-admin';
 
 // Redis Connection
 const connection = new IORedis(process.env.UPSTASH_REDIS_REST_URL, {
@@ -28,25 +16,32 @@ const connection = new IORedis(process.env.UPSTASH_REDIS_REST_URL, {
 const worker = new Worker(
   "transcription",
   async (job) => {
-    const { url, filename, docId } = job.data;
+    const { url, filename, docId, uid } = job.data;
 
     console.log(`🔄 Transcribing: ${filename}`);
 
-    const response = await axios.post("http://localhost:9000/transcribe", new URLSearchParams({ url }));
+    try {
+      const response = await axios.post(
+        "http://localhost:9000/transcribe",
+        new URLSearchParams({ url })
+      );
 
-    const transcription = response.data.text;
+      const transcription = response.data.text;
 
-    const docRef = doc(db, "transcriptions", docId);
-    await updateDoc(docRef, {
-      result: transcription,
-      completedAt: Timestamp.now(),
-    });
+      const docRef = adminDb.doc(`users/${uid}/transcriptions/${docId}`);
+      await docRef.update({
+        result: transcription,
+        completedAt: admin.firestore.Timestamp.now(),
+      });
 
-    console.log(`✅ Transcription saved for: ${filename}`);
+      console.log(`✅ Transcription saved for: ${filename}`);
+    } catch (error) {
+      console.error(`❌ Error during transcription of ${filename}:`, error);
+      throw error;
+    }
   },
   { connection }
 );
-
 
 // Error handler
 worker.on('failed', (job, err) => {
