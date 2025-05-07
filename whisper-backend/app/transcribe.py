@@ -5,7 +5,7 @@ import uuid
 
 model = whisper.load_model("small")
 
-def download_audio(url: str) -> str:
+def download_audio(url: str) -> str:      
     filename = f"/tmp/{uuid.uuid4()}.mp3"
     urllib.request.urlretrieve(url, filename)
     return filename

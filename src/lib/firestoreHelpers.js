@@ -1,14 +1,13 @@
-// src/lib/firestoreHelpers.js
+
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebase";
 
 export async function initializeUserInFirestore(uid, user) {
-  const userDocRef = doc(db, "users", uid);
-  const userSnap = await getDoc(userDocRef);
+  const creditsRef = doc(db, "users", uid, "credits", "balance");
+  const creditsSnap = await getDoc(creditsRef);
 
-  if (!userSnap.exists()) {
+  if (!creditsSnap.exists()) {
     const profileRef = doc(db, "users", uid, "credentials", "profile");
-    const creditsRef = doc(db, "users", uid, "credits", "balance");
 
     await Promise.all([
       setDoc(profileRef, {
@@ -24,3 +23,14 @@ export async function initializeUserInFirestore(uid, user) {
     ]);
   }
 }
+
+export async function getUserCredits(uid) {
+    const creditsRef = doc(db, "users", uid, "credits", "balance");
+    const snapshot = await getDoc(creditsRef);
+  
+    if (snapshot.exists()) {
+      return snapshot.data().totalCredits;
+    } else {
+      return 0;
+    }
+  }

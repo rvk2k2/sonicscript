@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { onSnapshot, collection, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { getAuth } from "firebase/auth";
+import { getUserCredits } from "@/lib/api";
 import UploadForm from '@/components/UploadForm';
 import { Home, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import TranscriptionList from '@/components/TranscriptionList';
 import TranscriptDisplay from '@/components/TranscriptDisplay';
+
 
 export default function Dashboard() {
   const [files, setFiles] = useState([]);
@@ -15,9 +18,18 @@ export default function Dashboard() {
   const [isUploading, setIsUploading] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [newlyUploadedId, setNewlyUploadedId] = useState(null);
+  const [credits, setCredits] = useState(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'transcriptions'), orderBy('createdAt', 'desc'));
+    const user = getAuth().currentUser;
+    if (!user) return [];
+  
+    const uid = user.uid;
+
+    const q = query(
+      collection(db, `users/${uid}/transcriptions`),
+      orderBy('createdAt', 'desc')
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setFiles(data);
@@ -41,9 +53,31 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [selectedFile, newlyUploadedId]);
 
+  useEffect(() => {
+    const fetchCredits = async () => {
+      try {
+        const user = getAuth().currentUser;
+        if (!user) return;
+
+        const idToken = await user.getIdToken();
+        const totalCredits = await getUserCredits(idToken);
+        setCredits(totalCredits);
+      } catch (err) {
+        console.error("Failed to fetch credits:", err);
+      }
+    };
+
+    fetchCredits();
+  }, []);
+
   const handleDeleteFile = async (fileId) => {
     try {
-      await deleteDoc(doc(db, 'transcriptions', fileId));
+      const user = getAuth().currentUser;
+      if (!user) throw new Error("User not authenticated");
+  
+      const docRef = doc(db, `users/${user.uid}/transcriptions`, fileId);
+      await deleteDoc(docRef);
+  
       if (selectedFile && selectedFile.id === fileId) {
         setSelectedFile(files.length > 1 ? files.find(file => file.id !== fileId) : null);
       }
@@ -51,6 +85,7 @@ export default function Dashboard() {
       console.error("Error deleting file:", error);
     }
   };
+  
 
   const refreshDashboard = () => {
     setSelectedFile(null);
@@ -80,7 +115,14 @@ export default function Dashboard() {
               onClick={refreshDashboard}
             />
           </div>
-
+          {credits !== null ? (
+        <p className="text-green-600 font-medium">
+          Remaining Credits: {credits}
+        </p>
+      ) : (
+        <p>Loading credits...</p>
+      )}
+         
           <div className="p-4">
             <h2 className="text-2xl font-bold mb-6">History</h2>
             <TranscriptionList 
