@@ -1,6 +1,6 @@
-// src/context/AuthContext.js
-"use client";
 
+"use client";
+import { initializeUserInFirestore } from "@/lib/firestoreHelpers";
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
-        await initializeUserInFirestore(user.uid, user); 
+        await initializeUserInFirestore(user.uid, user);  
       } else {
         setCurrentUser(null);
       }

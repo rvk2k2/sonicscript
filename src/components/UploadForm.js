@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "../lib/firebase";
 import { Upload } from "lucide-react";
+import { getAuth } from "firebase/auth";
 
 export default function UploadForm({ onUploadStart, onUploadComplete }) {
   const [file, setFile] = useState(null);
@@ -85,16 +86,31 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         const fileType = selectedFile.type.startsWith("audio/") ? "audio" : "video";
 
+        const auth = getAuth();
+        const user = auth.currentUser;
+      
+
+        if (!user) {
+          alert("⚠️ Please sign in before uploading a file.");
+          return;
+        }
+
+        const idToken = await user.getIdToken();
+
+        
         try {
+
           const res = await fetch("/api/transcribe", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              "Authorization": `Bearer ${idToken}`,
             },
             body: JSON.stringify({
               url: downloadURL,
               filename: selectedFile.name,
               type: fileType,
+      
             }),
           });
 
@@ -106,7 +122,9 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
           } else {
             setError("Transcription failed to start.");
           }
-        } catch (err) {
+        } 
+        
+        catch (err) {
           setError("Error sending data to server: " + err.message);
         }
 
