@@ -11,14 +11,7 @@ export default function Home() {
         <p className="text-lg text-gray-600">
       Go to <code className="bg-gray-100 px-2 py-1 rounded">/dashboard</code> to upload audio and get started.
     </p>
-        <div className="space-y-4">
-          <Link href="/signup" className="block p-2 bg-blue-500 text-white rounded-md">
-            Sign Up
-          </Link>
-          <Link href="/login" className="block p-2 bg-green-500 text-white rounded-md">
-            Login
-          </Link>
-        </div>
+       
       </div>
     </div>
   );
