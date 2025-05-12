@@ -1,20 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import AuthModal from "./AuthModal";
 import { signOut } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 
 const Navbar = () => {
-  const { currentUser, username } = useAuth();
+  const { currentUser } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState("");
+  const router = useRouter();
 
   const handleLogout = async () => {
     await signOut(auth);
     setDropdownOpen(false);
   };
+
+  useEffect(() => {
+    if (currentUser?.uid) {
+      const fetchUsername = async () => {
+        try {
+          const docRef = doc(db, "users", currentUser.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setUsername(docSnap.data().username || "");
+          }
+        } catch (error) {
+          console.error("Error fetching username:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchUsername();
+    }
+  }, [currentUser]);
 
   return (
     <nav className="flex justify-between items-center p-4 bg-gray-800 text-white">
@@ -26,13 +50,14 @@ const Navbar = () => {
             onClick={() => setDropdownOpen((prev) => !prev)}
             className="px-4 py-2 bg-green-600 rounded-md"
           >
-            Welcome, {username || "User"}
+            {!loading && username && <p>Hi, {username} 👋</p>}
           </button>
+
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white text-black rounded shadow-lg z-50">
               <button
-                onClick={() => alert("Settings clicked")}
                 className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                onClick={() => router.push("/settings")}
               >
                 Settings
               </button>
@@ -54,7 +79,7 @@ const Navbar = () => {
         </button>
       )}
 
-      {modalOpen && <AuthModal onClose={() => setModalOpen(false)} />}
+      <AuthModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </nav>
   );
 };

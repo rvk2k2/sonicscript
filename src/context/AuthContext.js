@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { updateProfile } from "firebase/auth";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }) => {
       // Manually inject displayName from form, since Firebase doesn't allow setting it on sign-up
       user.displayName = username;
       await initializeUserInFirestore(user.uid, user, username); // send username explicitly
+      await updateProfile(user, { displayName: username });
       return user;
     } catch (error) {
       console.error("Signup error:", error);

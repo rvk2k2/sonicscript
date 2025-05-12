@@ -81,7 +81,7 @@ const SignUp = () => {
                 type="email"
                 id="email"
                 placeholder="Your email address"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                className="w-full px-4 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -126,7 +126,7 @@ const SignUp = () => {
             <div>
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-gray-900 font-medium py-3 px-4 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
               >
                 Continue
               </button>
