@@ -1,7 +1,6 @@
-
 "use client";
-import { initializeUserInFirestore } from "@/lib/firestoreHelpers";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { updateProfile } from "firebase/auth";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -10,8 +9,8 @@ import {
   signInWithPopup,
   onAuthStateChanged,
 } from "firebase/auth";
-import { auth, db } from "../lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { auth } from "../lib/firebase";
+import { initializeUserInFirestore } from "@/lib/firestoreHelpers";
 
 const AuthContext = createContext();
 
@@ -19,66 +18,80 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Create Firestore user doc if not exists
-  const createUserInFirestore = async (user) => {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      // New user
-      await setDoc(userRef, {
-        email: user.email,
-        credits: 500,
-        createdAt: serverTimestamp(),
-        lastLogin: serverTimestamp(),
-        provider: user.providerData[0]?.providerId || "password",
-      });
-    } else {
-      // Existing user → just update login timestamp
-      await updateDoc(userRef, {
-        lastLogin: serverTimestamp(),
-      });
-    }
-  };
-
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
-        await initializeUserInFirestore(user.uid, user);  
+        try {
+          await initializeUserInFirestore(user.uid, user);
+        } catch (error) {
+          console.error("Error initializing Firestore user:", error);
+        }
       } else {
         setCurrentUser(null);
       }
       setLoading(false);
     });
-  
+
     return () => unsubscribe();
   }, []);
 
-  const signup = (email, password) =>
-    createUserWithEmailAndPassword(auth, email, password);
-
-  const login = (email, password) =>
-    signInWithEmailAndPassword(auth, email, password);
-
-  const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    return signInWithPopup(auth, provider);
+  const signup = async (email, password, username) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      // Manually inject displayName from form, since Firebase doesn't allow setting it on sign-up
+      user.displayName = username;
+      await initializeUserInFirestore(user.uid, user, username); // send username explicitly
+      await updateProfile(user, { displayName: username });
+      return user;
+    } catch (error) {
+      console.error("Signup error:", error);
+      throw error;
+    }
   };
 
-  const logout = () => signOut(auth);
+  const login = async (email, password) => {
+    try {
+      return await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    } catch (error) {
+  if (error.code === "auth/popup-closed-by-user") {
+    setError("You closed the sign-in popup before completing the login.");
+  } else {
+    setError("Login failed. Please try again.");
+  }
+}
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const value = useMemo(() => ({
+    currentUser,
+    signup,
+    login,
+    logout,
+    loginWithGoogle,
+  }), [currentUser]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        currentUser,
-        signup,
-        login,
-        logout,
-        loginWithGoogle,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {!loading && children}
     </AuthContext.Provider>
   );
