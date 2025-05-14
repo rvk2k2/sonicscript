@@ -22,7 +22,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const user = getAuth().currentUser;
-    if (!user) return [];
+    if (!user) return;
   
     const uid = user.uid;
 

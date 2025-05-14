@@ -1,36 +1,31 @@
-
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebase";
 
-export async function initializeUserInFirestore(uid, user) {
+export async function initializeUserInFirestore(uid, user, usernameOverride = null) {
   const creditsRef = doc(db, "users", uid, "credits", "balance");
   const creditsSnap = await getDoc(creditsRef);
 
   if (!creditsSnap.exists()) {
     const profileRef = doc(db, "users", uid, "credentials", "profile");
 
-    await Promise.all([
-      setDoc(profileRef, {
-        username: user.displayName || "Unnamed User",
-        email: user.email,
-        photoURL: user.photoURL || null,
-        createdAt: serverTimestamp(),
-      }),
-      setDoc(creditsRef, {
-        totalCredits: 500,
-        lastUpdated: serverTimestamp(),
-      }),
-    ]);
-  }
-}
+    const username = usernameOverride || user.displayName || "Unnamed User";
 
-export async function getUserCredits(uid) {
-    const creditsRef = doc(db, "users", uid, "credits", "balance");
-    const snapshot = await getDoc(creditsRef);
-  
-    if (snapshot.exists()) {
-      return snapshot.data().totalCredits;
-    } else {
-      return 0;
+    try {
+      await Promise.all([
+        setDoc(profileRef, {
+          username,
+          email: user.email,
+          photoURL: user.photoURL || null,
+          createdAt: serverTimestamp(),
+        }),
+        setDoc(creditsRef, {
+          totalCredits: 500,
+          lastUpdated: serverTimestamp(),
+        }),
+      ]);
+    } catch (error) {
+      console.error("Error creating Firestore user documents:", error);
+      throw error;
     }
   }
+}

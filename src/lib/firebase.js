@@ -1,4 +1,4 @@
-// src/lib/firebase.js
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -14,7 +14,6 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-console.log("Firebase API Key:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
 
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
