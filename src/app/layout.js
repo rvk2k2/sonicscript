@@ -1,5 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "../styles/globals.css";
+import Navbar from "@/components/Navbar";
+import { AuthProvider } from "../context/AuthContext";  // Import the AuthProvider
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Sonic Script",
-  description: "Audio to text transcription app",
+  description: "Audio to text transcription made easy",
 };
 
 export default function RootLayout({ children }) {
@@ -22,7 +24,10 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AuthProvider>  
+          <Navbar />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
