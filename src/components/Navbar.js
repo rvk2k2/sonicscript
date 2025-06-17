@@ -84,7 +84,7 @@ const Navbar = () => {
                 </svg>
               </button>
               <button className="px-4 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full text-sm font-medium transition-all duration-200 flex items-center space-x-1">
-                <span>Company</span>
+                <span>About</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>

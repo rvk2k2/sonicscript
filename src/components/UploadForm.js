@@ -135,41 +135,117 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
     );
   };
 
-  return (
-    <div className="w-full">
-      <div 
-        className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer
-          ${dragActive ? 'border-gray-800 bg-gray-50' : 'border-gray-300'}`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        <input
-          type="file"
-          onChange={handleFileChange}
-          className="hidden"
-          id="file-upload"
-          accept="audio/*,video/*"
-        />
-        <label htmlFor="file-upload" className="w-full cursor-pointer">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500">Drag and drop or select a file to upload</span>
-            <Upload className="h-6 w-6 text-gray-500" />
-          </div>
-        </label>
+ return (
+  <div className="w-full">
+    <div 
+      className={`relative border-2 border-dashed rounded-2xl p-12 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group ${
+        dragActive 
+          ? 'border-purple-500 bg-purple-500/10 backdrop-blur-sm scale-105' 
+          : 'border-white/30 hover:border-purple-400 hover:bg-white/5 backdrop-blur-sm'
+      }`}
+      onDragEnter={handleDrag}
+      onDragLeave={handleDrag}
+      onDragOver={handleDrag}
+      onDrop={handleDrop}
+    >
+      {/* Background Glow Effect */}
+      <div className={`absolute inset-0 rounded-2xl transition-opacity duration-300 ${
+        dragActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'
+      }`}>
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl"></div>
       </div>
 
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      {progress > 0 && (
-        <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-          <div
-            className="bg-gray-800 h-2 rounded-full"
-            style={{ width: `${progress}%` }}
-          />
+      <input
+        type="file"
+        onChange={handleFileChange}
+        className="hidden"
+        id="file-upload"
+        accept="audio/*,video/*"
+      />
+      
+      <label htmlFor="file-upload" className="w-full cursor-pointer relative z-10">
+        <div className="text-center">
+          {/* Upload Icon */}
+          <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+            dragActive 
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 scale-110' 
+              : 'bg-white/10 group-hover:bg-gradient-to-r group-hover:from-purple-600/50 group-hover:to-pink-600/50'
+          }`}>
+            <Upload className={`transition-all duration-300 ${
+              dragActive ? 'h-8 w-8 text-white' : 'h-8 w-8 text-white/80 group-hover:text-white'
+            }`} />
+          </div>
+
+          {/* Upload Text */}
+          <div className="space-y-3">
+            <h3 className={`text-2xl font-bold transition-colors duration-300 ${
+              dragActive ? 'text-white' : 'text-white/90 group-hover:text-white'
+            }`}>
+              {dragActive ? 'Drop your file here' : 'Upload your audio file'}
+            </h3>
+            
+            <p className={`text-lg transition-colors duration-300 ${
+              dragActive ? 'text-purple-200' : 'text-white/60 group-hover:text-white/80'
+            }`}>
+              {dragActive ? 'Release to upload' : 'Drag and drop or click to browse'}
+            </p>
+            
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <span className="px-3 py-1 bg-white/10 rounded-full text-white/60 text-sm">MP3</span>
+              <span className="px-3 py-1 bg-white/10 rounded-full text-white/60 text-sm">MP4</span>
+            </div>
+          </div>
         </div>
-      )}
-      {success && <p className="text-green-600 mt-2">{success}</p>}
+      </label>
+
+      {/* Decorative Elements */}
+      <div className="absolute top-4 left-4 w-2 h-2 bg-purple-400 rounded-full opacity-60"></div>
+      <div className="absolute top-6 right-8 w-1 h-1 bg-pink-400 rounded-full opacity-60"></div>
+      <div className="absolute bottom-4 right-4 w-2 h-2 bg-blue-400 rounded-full opacity-60"></div>
+      <div className="absolute bottom-8 left-6 w-1 h-1 bg-green-400 rounded-full opacity-60"></div>
     </div>
-  );
+
+    {/* Error Message */}
+    {error && (
+      <div className="mt-4 p-4 bg-red-500/10 backdrop-blur-sm border border-red-500/30 rounded-xl">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
+            <span className="text-red-400 text-sm">⚠️</span>
+          </div>
+          <p className="text-red-400 font-medium">{error}</p>
+        </div>
+      </div>
+    )}
+
+    {/* Progress Bar */}
+    {progress > 0 && (
+      <div className="mt-6">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-white/80 font-medium">Uploading...</span>
+          <span className="text-white/60 text-sm">{progress}%</span>
+        </div>
+        <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+          <div
+            className="bg-gradient-to-r from-purple-600 to-pink-600 h-3 rounded-full transition-all duration-300 relative"
+            style={{ width: `${progress}%` }}
+          >
+            <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Success Message */}
+    {success && (
+      <div className="mt-4 p-4 bg-green-500/10 backdrop-blur-sm border border-green-500/30 rounded-xl">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+            <span className="text-green-400 text-sm">✅</span>
+          </div>
+          <p className="text-green-400 font-medium">{success}</p>
+        </div>
+      </div>
+    )}
+  </div>
+);
 }

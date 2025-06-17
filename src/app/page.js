@@ -110,7 +110,7 @@ export default function Home() {
                 <span className="inline-block transition-transform group-hover:translate-x-1 ml-2">→</span>
               </Link>
               <button className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-full text-lg transition-all duration-300 backdrop-blur-sm border border-white/20">
-                Watch Demo
+                Get Demo
               </button>
             </div>
 
