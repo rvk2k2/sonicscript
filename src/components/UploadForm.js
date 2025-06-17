@@ -6,7 +6,7 @@ import { Upload } from "lucide-react";
 import { getAuth } from "firebase/auth";
 
 export default function UploadForm({ onUploadStart, onUploadComplete }) {
-  const [file, setFile] = useState(null);
+ const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -16,13 +16,41 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
   const allowedTypes = ["audio/mpeg", "audio/wav", "video/mp4", "video/webm"];
   const maxSize = 50 * 1024 * 1024;
 
-  const handleFileChange = (e) => {
-    const selected = e.target.files[0];
-    if (!selected) return;
-    validateAndSetFile(selected);
+  const checkCreditsBeforeUpload = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("⚠️ Please sign in before uploading a file.");
+      return false;
+    }
+
+    const idToken = await user.getIdToken();
+
+    const res = await fetch("/api/transcribe", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ precheck: true }),
+    });
+
+    if (res.status === 403) {
+      setError("Not enough credits to transcribe. Please upgrade or wait.");
+      return false;
+    }
+
+    return true;
   };
 
-  const validateAndSetFile = (selected) => {
+  const handleFileChange = async (e) => {
+    const selected = e.target.files[0];
+    if (!selected) return;
+    await validateAndSetFile(selected);
+  };
+
+  const validateAndSetFile = async (selected) => {
     if (!allowedTypes.includes(selected.type)) {
       setError("Only audio (MP3, WAV) and video (MP4, WEBM) files are allowed.");
       setFile(null);
@@ -37,17 +65,17 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
 
     setError("");
     setFile(selected);
+
+    const canUpload = await checkCreditsBeforeUpload();
+    if (!canUpload) return;
+
     handleUpload(selected);
   };
 
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
   };
 
   const handleDrop = (e) => {
@@ -60,11 +88,6 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
   };
 
   const handleUpload = async (selectedFile) => {
-    if (!selectedFile) {
-      setError("Please select a file first.");
-      return;
-    }
-
     setUploading(true);
     if (onUploadStart) onUploadStart();
 
@@ -75,7 +98,6 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
       "state_changed",
       (snapshot) => {
         const prog = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        console.log(`Upload is ${progress}% done`);
         setProgress(prog);
       },
       (err) => {
@@ -88,7 +110,6 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
 
         const auth = getAuth();
         const user = auth.currentUser;
-      
 
         if (!user) {
           alert("⚠️ Please sign in before uploading a file.");
@@ -97,20 +118,17 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
 
         const idToken = await user.getIdToken();
 
-        
         try {
-
           const res = await fetch("/api/transcribe", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${idToken}`,
+              Authorization: `Bearer ${idToken}`,
             },
             body: JSON.stringify({
               url: downloadURL,
               filename: selectedFile.name,
               type: fileType,
-      
             }),
           });
 
@@ -122,9 +140,7 @@ export default function UploadForm({ onUploadStart, onUploadComplete }) {
           } else {
             setError("Transcription failed to start.");
           }
-        } 
-        
-        catch (err) {
+        } catch (err) {
           setError("Error sending data to server: " + err.message);
         }
 
