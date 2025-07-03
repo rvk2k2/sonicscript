@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🎧 SonicScript – Audio & Video Transcription Platform
 
-## Getting Started
+SonicScript is a powerful, full-stack transcription platform that enables users to upload audio/video files and receive high-quality text transcriptions. It features real-time processing using OpenAI's Whisper model (self-hosted in Docker), Firebase-backed authentication, a dynamic credit system, and Stripe-powered payments — all wrapped in a sleek, user-friendly dashboard.
 
-First, run the development server:
+## 📋 Summary
 
+SonicScript empowers users to:
+- Upload audio/video files (MP3, M4A, MP4, WEBM)
+- Automatically transcribe them using a self-hosted Whisper backend
+- Manage transcription history
+- Download transcripts in PDF or TXT formats
+- Securely log in with Email or Google
+- Track & manage transcription credits
+- Purchase additional credits via Stripe
+
+This project is ideal for developers looking to build scalable, production-grade transcription apps with serverless infrastructure and background job processing.
+
+## 🚀 Features
+
+-  Audio & Video file support (MP3, M4A, MP4, WEBM)
+-  Self-hosted Whisper backend in Docker
+-  Real-time transcription history & chat-style transcript viewer
+-  Firebase Authentication (Email/Password + Google OAuth)
+-  Username capture and editing
+-  Dynamic credit system
+  - 500 credits on signup
+  - 130 credits deducted per transcription
+  - Prevents transcription if insufficient balance
+-  Stripe integration to purchase credits
+-  Stripe webhook to securely update credits
+-  Settings page to manage user profile
+-  Forgot password support
+-  Full account deletion (Auth + Firestore)
+
+## 🛠️ Technologies Used
+
+- **Frontend**: Next.js (App Router), Tailwind CSS
+- **Backend**:
+  - Firebase (Auth, Firestore, Storage)
+  - BullMQ + Upstash Redis (Job queue)
+  - FastAPI (Python) + Whisper (Docker container)
+  - Stripe (Checkout + Webhook)
+- **Other Tools**:
+  - Axios, jsPDF
+  - Firebase Admin SDK
+  - dotenv, lucide-react
+
+## 🧪 Installation & Setup
+
+### Prerequisites
+- Node.js (v18+)
+- Docker
+- Python 3.10+
+- Firebase project
+- Upstash Redis
+- Stripe account
+
+### 1. Clone the Repo
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/sonicscript.git
+cd sonicscript
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install Node Dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### 3. Configure Environment
+Create a `.env` file in the root directory:
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_bucket
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+UPSTASH_REDIS_REST_URL=your_upstash_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_token
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_webhook_secret
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Run the Whisper Backend (Python)
+```bash
+cd whisper-backend
+docker build -t whisper-api .
+docker run -p 9000:9000 whisper-api
+```
 
-## Learn More
+### 5. Run Redis Worker
+```bash
+node transcriber.js
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 6. Start the Next.js App
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🏗️ Building for Production
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run build
+npm start
+```
 
-## Deploy on Vercel
+## 🗂️ Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+sonicscript/
+├── public/                     # Static assets
+├── src/
+│   ├── app/                    # App Router (Next.js pages)
+│   │   ├── api/transcribe/     # API route for transcription jobs
+│   │   ├── dashboard/          # Main dashboard UI
+│   ├── components/             # Reusable components (Navbar, UploadForm, etc.)
+│   ├── lib/                    # Firebase config, queue, download logic
+├── whisper-backend/            # FastAPI + Whisper Docker backend
+├── transcriber.js              # BullMQ worker (Node.js)
+├── .env                        # Environment variables
+├── package.json                # Node dependencies
+└── README.md
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🤝 Contributing
+
+Feel free to fork the project and submit a pull request if you have any improvements!
+
+
+## 📧 Support
+
+For support or questions, please open an issue in the GitHub repository.
+
