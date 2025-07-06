@@ -61,18 +61,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginWithGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      return result.user;
-    } catch (error) {
-  if (error.code === "auth/popup-closed-by-user") {
-    setError("You closed the sign-in popup before completing the login.");
-  } else {
-    setError("Login failed. Please try again.");
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Ensure Firestore profile and credits are created
+    await initializeUserInFirestore(user.uid, user);
+
+    return user;
+  } catch (error) {
+    if (error.code === "auth/popup-closed-by-user") {
+      console.error("You closed the sign-in popup before completing the login.");
+    } else {
+      console.error("Google login failed:", error);
+    }
+    throw error;
   }
-}
-  };
+};
+
 
   const logout = async () => {
     try {
